@@ -3,153 +3,197 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POS 收銀系統</title>
+<title>阿公的毛線店 POS</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
   :root {
-    --bg: #F5F3EE; --surface: #FFFFFF; --border: #E2DDD5;
-    --text: #1A1816; --muted: #7A756E;
-    --accent: #2C5F3E; --accent-light: #EAF2EC;
-    --danger: #C0392B; --danger-light: #FDECEA;
-    --warning: #B8860B; --warning-light: #FFF8E6;
-    --mono: 'DM Mono', monospace; --sans: 'Noto Sans TC', sans-serif;
+    --bg: #F7F4EF;
+    --surface: #FDFBF8;
+    --border: #E8E0D5;
+    --border-dark: #D4C9BC;
+    --text: #2C2416;
+    --text-sub: #6B5D4F;
+    --text-hint: #9E8E7E;
+    --accent: #6B4F2E;
+    --accent-light: #F2EBE1;
+    --accent-mid: #8B6842;
+    --green: #4A6741;
+    --green-light: #EDF2EC;
+    --danger: #8B3A2A;
+    --danger-light: #F7EDEB;
+    --warning: #7A5C1E;
+    --warning-light: #FAF3E0;
+    --serif: 'Noto Serif TC', serif;
+    --sans: 'Noto Sans TC', sans-serif;
+    --mono: 'DM Mono', monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--sans); background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: 52px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  /* TOP BAR */
+  .topbar { background: var(--accent); padding: 0 20px; height: 50px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
   .topbar-left { display: flex; align-items: center; gap: 16px; }
-  .logo { font-weight: 700; font-size: 15px; letter-spacing: 0.05em; color: var(--accent); }
-  .status-pill { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; }
-  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #27AE60; }
-  .status-dot.error { background: var(--danger); }
-  .status-dot.pending { background: #ccc; }
+  .logo { font-family: var(--serif); font-weight: 500; font-size: 16px; color: #F7F4EF; letter-spacing: 0.1em; }
+  .status-pill { display: flex; align-items: center; gap: 5px; font-size: 11px; color: rgba(247,244,239,0.7); background: rgba(0,0,0,0.15); border-radius: 20px; padding: 3px 10px; }
+  .status-dot { width: 5px; height: 5px; border-radius: 50%; background: #A8D5A2; }
+  .status-dot.error { background: #E8957A; }
+  .status-dot.pending { background: rgba(247,244,239,0.4); }
   .topbar-right { display: flex; align-items: center; gap: 10px; }
-  .order-badge { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .order-badge { font-family: var(--mono); font-size: 12px; color: rgba(247,244,239,0.8); }
+  .cfg-btn { height: 28px; padding: 0 12px; border: 1px solid rgba(247,244,239,0.3); border-radius: 5px; background: transparent; color: rgba(247,244,239,0.85); font-size: 12px; cursor: pointer; font-family: var(--sans); }
+  .cfg-btn:hover { background: rgba(0,0,0,0.15); }
 
-  .config-banner { background: var(--warning-light); border-bottom: 1px solid #F0D080; padding: 10px 20px; display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--warning); flex-shrink: 0; }
+  /* CONFIG BANNER */
+  .config-banner { background: var(--warning-light); border-bottom: 1px solid #E8D5A0; padding: 9px 20px; display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--warning); flex-shrink: 0; }
   .config-banner.hidden { display: none; }
-  .config-btn-sm { background: var(--warning); color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: var(--sans); }
+  .config-btn-sm { background: var(--accent); color: #F7F4EF; border: none; border-radius: 5px; padding: 4px 12px; font-size: 12px; cursor: pointer; font-family: var(--sans); }
 
-  .main { display: grid; grid-template-columns: 1fr 360px; flex: 1; overflow: hidden; }
+  /* MAIN */
+  .main { display: grid; grid-template-columns: 1fr 340px; flex: 1; overflow: hidden; }
   .left { display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); }
 
-  .search-area { padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; gap: 8px; flex-shrink: 0; }
+  /* SEARCH */
+  .search-area { padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; gap: 8px; flex-shrink: 0; }
   .search-wrap { flex: 1; position: relative; }
-  .search-input { width: 100%; height: 38px; padding: 0 12px 0 34px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: var(--sans); background: var(--bg); color: var(--text); outline: none; transition: border 0.15s; }
-  .search-input:focus { border-color: var(--accent); background: white; }
-  .search-ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 15px; pointer-events: none; }
-  .sync-btn { height: 38px; padding: 0 14px; border: 1px solid var(--border); border-radius: 8px; background: white; font-size: 13px; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: var(--sans); white-space: nowrap; }
-  .sync-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .search-input { width: 100%; height: 36px; padding: 0 12px 0 32px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: var(--sans); background: var(--bg); color: var(--text); outline: none; }
+  .search-input:focus { border-color: var(--accent); background: var(--surface); }
+  .search-ico { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--text-hint); font-size: 14px; pointer-events: none; }
+  .reload-btn { height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); font-size: 12px; color: var(--text-sub); cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: var(--sans); white-space: nowrap; }
+  .reload-btn:hover { border-color: var(--accent); color: var(--accent); }
   .spin { display: inline-block; }
   .spin.go { animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .cat-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); overflow-x: auto; flex-shrink: 0; padding: 0 16px; }
-  .cat-tab { padding: 10px 14px; font-size: 13px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
-  .cat-tab:hover { color: var(--text); }
+  /* CATEGORY TABS */
+  .cat-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); overflow-x: auto; flex-shrink: 0; padding: 0 14px; }
+  .cat-tabs::-webkit-scrollbar { height: 0; }
+  .cat-tab { padding: 9px 12px; font-size: 12px; color: var(--text-hint); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; letter-spacing: 0.03em; }
+  .cat-tab:hover { color: var(--text-sub); }
   .cat-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
 
-  .product-area { flex: 1; overflow-y: auto; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; align-content: start; }
-  .prod-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.12s; }
-  .prod-card:hover:not(.out) { border-color: var(--accent); background: var(--accent-light); }
-  .prod-card:active:not(.out) { transform: scale(0.97); }
-  .prod-card.out { opacity: 0.45; cursor: not-allowed; }
-  .prod-name { font-size: 12.5px; font-weight: 500; margin-bottom: 3px; line-height: 1.4; }
-  .prod-brand { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
-  .prod-price { font-family: var(--mono); font-size: 14px; font-weight: 500; }
-  .prod-stock { font-size: 11px; margin-top: 3px; }
-  .s-ok { color: #27AE60; } .s-low { color: var(--warning); } .s-out { color: var(--danger); }
-  .prod-barcode { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
-  .empty-state { grid-column:1/-1; text-align:center; padding:3rem 1rem; color:var(--muted); font-size:14px; }
+  /* PRODUCT GRID */
+  .product-area { flex: 1; overflow-y: auto; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 8px; align-content: start; }
+  .product-area::-webkit-scrollbar { width: 4px; }
+  .product-area::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 2px; }
 
+  .prod-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; transition: all 0.12s; }
+  .prod-card:hover:not(.out) { border-color: var(--accent-mid); box-shadow: 0 2px 8px rgba(107,79,46,0.12); }
+  .prod-card:active:not(.out) { transform: scale(0.98); }
+  .prod-card.out { opacity: 0.4; cursor: not-allowed; }
+
+  .prod-img { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--bg); display: block; }
+  .prod-img-placeholder { width: 100%; aspect-ratio: 1; background: var(--accent-light); display: flex; align-items: center; justify-content: center; color: var(--text-hint); font-size: 24px; }
+  .prod-body { padding: 8px 9px 9px; }
+  .prod-name { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 2px; line-height: 1.4; }
+  .prod-brand { font-size: 10px; color: var(--text-hint); margin-bottom: 5px; letter-spacing: 0.03em; }
+  .prod-price { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent); }
+  .prod-stock { font-size: 10px; margin-top: 3px; }
+  .s-ok { color: var(--green); }
+  .s-low { color: var(--warning); }
+  .s-out { color: var(--danger); }
+  .empty-state { grid-column:1/-1; text-align:center; padding:3rem 1rem; color:var(--text-hint); font-size:13px; font-family: var(--serif); }
+
+  /* RIGHT PANEL */
   .right { display: flex; flex-direction: column; background: var(--surface); overflow: hidden; }
 
-  .cust-section { border-bottom: 1px solid var(--border); padding: 12px 16px; flex-shrink: 0; }
-  .sec-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  /* CUSTOMER */
+  .cust-section { border-bottom: 1px solid var(--border); padding: 11px 14px; flex-shrink: 0; }
+  .sec-label { font-size: 10px; font-weight: 500; letter-spacing: 0.12em; color: var(--text-hint); text-transform: uppercase; margin-bottom: 7px; font-family: var(--serif); }
   .phone-row { display: flex; gap: 6px; }
-  .phone-input { flex: 1; height: 34px; border: 1px solid var(--border); border-radius: 7px; padding: 0 10px; font-size: 13px; font-family: var(--mono); background: var(--bg); color: var(--text); outline: none; }
-  .phone-input:focus { border-color: var(--accent); background: white; }
-  .phone-btn { height: 34px; padding: 0 12px; background: var(--accent); color: white; border: none; border-radius: 7px; font-size: 12px; cursor: pointer; font-family: var(--sans); }
-  .cust-info { margin-top: 8px; background: var(--accent-light); border: 1px solid #C3DECA; border-radius: 7px; padding: 8px 10px; font-size: 13px; display: none; }
+  .phone-input { flex: 1; height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px; font-size: 12px; font-family: var(--mono); background: var(--bg); color: var(--text); outline: none; }
+  .phone-input:focus { border-color: var(--accent); background: var(--surface); }
+  .phone-btn { height: 32px; padding: 0 12px; background: var(--accent); color: #F7F4EF; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: var(--sans); }
+  .phone-btn:hover { background: var(--accent-mid); }
+  .cust-info { margin-top: 7px; background: var(--accent-light); border: 1px solid #D4C4AE; border-radius: 6px; padding: 7px 10px; font-size: 12px; display: none; }
   .cust-info.show { display: block; }
-  .cust-name { font-weight: 500; color: var(--accent); }
-  .cust-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .new-badge { display: inline-block; background: #FFF0C0; border: 1px solid #F0D080; color: var(--warning); font-size: 10px; padding: 1px 6px; border-radius: 10px; margin-left: 6px; }
+  .cust-name { font-weight: 500; color: var(--accent); font-family: var(--serif); }
+  .cust-sub { font-size: 10px; color: var(--text-hint); margin-top: 1px; }
+  .new-badge { display: inline-block; background: var(--warning-light); border: 1px solid #E8D5A0; color: var(--warning); font-size: 10px; padding: 1px 6px; border-radius: 10px; margin-left: 5px; }
 
-  .cart-hdr { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  .cart-title { font-size: 13px; font-weight: 700; }
-  .clear-btn { font-size: 12px; color: var(--muted); background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+  /* CART */
+  .cart-hdr { padding: 9px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .cart-title { font-size: 12px; font-weight: 500; letter-spacing: 0.08em; color: var(--text); font-family: var(--serif); }
+  .clear-btn { font-size: 11px; color: var(--text-hint); background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
   .clear-btn:hover { color: var(--danger); background: var(--danger-light); }
 
-  .cart-items { flex: 1; overflow-y: auto; padding: 8px; }
-  .cart-empty { text-align: center; padding: 2rem; color: var(--muted); font-size: 13px; line-height: 2.2; }
-  .cart-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px; border-radius: 8px; margin-bottom: 2px; }
+  .cart-items { flex: 1; overflow-y: auto; padding: 6px 8px; }
+  .cart-items::-webkit-scrollbar { width: 3px; }
+  .cart-items::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .cart-empty { text-align: center; padding: 2rem; color: var(--text-hint); font-size: 12px; line-height: 2.5; font-family: var(--serif); }
+
+  .cart-item { display: flex; align-items: flex-start; gap: 7px; padding: 7px; border-radius: 6px; margin-bottom: 2px; }
   .cart-item:hover { background: var(--bg); }
+  .cart-item-thumb { width: 36px; height: 36px; border-radius: 4px; object-fit: cover; background: var(--accent-light); flex-shrink: 0; }
   .ci-info { flex: 1; min-width: 0; }
-  .ci-name { font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .ci-brand { font-size: 11px; color: var(--muted); }
-  .ci-unit { font-family: var(--mono); font-size: 11px; color: var(--muted); }
-  .qty-ctrl { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-  .qty-btn { width: 22px; height: 22px; border: 1px solid var(--border); border-radius: 5px; background: white; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .ci-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ci-brand { font-size: 10px; color: var(--text-hint); }
+  .ci-unit { font-family: var(--mono); font-size: 10px; color: var(--text-hint); }
+  .qty-ctrl { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+  .qty-btn { width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; color: var(--text); }
   .qty-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .qty-num { font-family: var(--mono); font-size: 13px; min-width: 20px; text-align: center; }
-  .ci-total { font-family: var(--mono); font-size: 13px; font-weight: 500; min-width: 58px; text-align: right; flex-shrink: 0; }
-  .rm-btn { width: 18px; height: 18px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .qty-num { font-family: var(--mono); font-size: 12px; min-width: 18px; text-align: center; }
+  .ci-total { font-family: var(--mono); font-size: 12px; font-weight: 500; min-width: 54px; text-align: right; flex-shrink: 0; color: var(--accent); }
+  .rm-btn { width: 16px; height: 16px; border: none; background: none; cursor: pointer; color: var(--text-hint); font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .rm-btn:hover { color: var(--danger); }
 
-  .disc-section { border-top: 1px solid var(--border); padding: 10px 16px; flex-shrink: 0; }
+  /* DISCOUNT */
+  .disc-section { border-top: 1px solid var(--border); padding: 9px 14px; flex-shrink: 0; }
   .disc-row { display: flex; gap: 6px; align-items: center; }
-  .disc-select { height: 32px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 12px; font-family: var(--sans); color: var(--text); padding: 0 6px; outline: none; }
-  .disc-input { flex: 1; height: 32px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 13px; font-family: var(--mono); color: var(--text); padding: 0 8px; outline: none; }
-  .disc-input:focus, .disc-select:focus { border-color: var(--accent); background: white; }
+  .disc-select { height: 30px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); font-size: 11px; font-family: var(--sans); color: var(--text); padding: 0 6px; outline: none; }
+  .disc-input { flex: 1; height: 30px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); font-size: 12px; font-family: var(--mono); color: var(--text); padding: 0 8px; outline: none; }
+  .disc-input:focus, .disc-select:focus { border-color: var(--accent); background: var(--surface); }
 
-  .cart-footer { border-top: 1px solid var(--border); padding: 12px 16px; flex-shrink: 0; }
-  .sum-row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; }
+  /* FOOTER */
+  .cart-footer { border-top: 1px solid var(--border); padding: 11px 14px; flex-shrink: 0; }
+  .sum-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-hint); margin-bottom: 4px; }
   .sum-val { font-family: var(--mono); }
-  .disc-disp { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--danger); margin-bottom: 5px; }
-  .total-row { display: flex; justify-content: space-between; font-size: 18px; font-weight: 700; margin: 10px 0 12px; }
-  .total-val { font-family: var(--mono); color: var(--accent); }
+  .disc-disp { display: flex; justify-content: space-between; font-size: 12px; color: var(--danger); margin-bottom: 4px; }
+  .total-row { display: flex; justify-content: space-between; font-size: 18px; margin: 8px 0 10px; }
+  .total-label { font-family: var(--serif); font-weight: 500; color: var(--text); }
+  .total-val { font-family: var(--mono); font-weight: 500; color: var(--accent); }
 
-  .pay-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; margin-bottom: 10px; }
-  .pay-btn { height: 32px; border: 1px solid var(--border); border-radius: 7px; background: white; font-size: 11.5px; cursor: pointer; font-family: var(--sans); color: var(--muted); transition: all 0.12s; }
-  .pay-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .pay-btn.sel { border-color: var(--accent); background: var(--accent); color: white; font-weight: 500; }
+  .pay-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; margin-bottom: 9px; }
+  .pay-btn { height: 30px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); font-size: 11px; cursor: pointer; font-family: var(--sans); color: var(--text-sub); transition: all 0.12s; }
+  .pay-btn:hover { border-color: var(--accent-mid); color: var(--accent); }
+  .pay-btn.sel { border-color: var(--accent); background: var(--accent); color: #F7F4EF; font-weight: 500; }
 
-  .checkout-btn { width: 100%; height: 44px; background: var(--accent); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: var(--sans); transition: all 0.15s; }
-  .checkout-btn:hover:not(:disabled) { background: #1E4A2E; }
-  .checkout-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+  .checkout-btn { width: 100%; height: 42px; background: var(--accent); color: #F7F4EF; border: none; border-radius: 7px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--serif); letter-spacing: 0.08em; transition: all 0.15s; }
+  .checkout-btn:hover:not(:disabled) { background: var(--accent-mid); }
+  .checkout-btn:disabled { background: var(--border); color: var(--text-hint); cursor: not-allowed; }
 
   /* MODALS */
-  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(44,36,22,0.45); z-index: 100; align-items: center; justify-content: center; }
   .overlay.show { display: flex; }
-  .modal { background: white; border-radius: 16px; padding: 24px; width: 420px; max-width: 95vw; }
-  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
-  .mfield { margin-bottom: 12px; }
-  .mlabel { font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
-  .minput { width: 100%; height: 38px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; font-size: 14px; font-family: var(--sans); outline: none; }
-  .minput:focus { border-color: var(--accent); }
-  .mhint { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
-  .mactions { display: flex; gap: 8px; margin-top: 16px; }
-  .mbtn { flex: 1; height: 40px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; cursor: pointer; font-family: var(--sans); }
-  .mbtn.primary { background: var(--accent); color: white; border-color: var(--accent); font-weight: 600; }
-  .mbtn.secondary { background: white; color: var(--text); }
+  .modal { background: var(--surface); border-radius: 12px; padding: 22px; width: 400px; max-width: 95vw; border: 1px solid var(--border); }
+  .modal-title { font-family: var(--serif); font-size: 16px; font-weight: 500; margin-bottom: 14px; color: var(--text); }
+  .mfield { margin-bottom: 10px; }
+  .mlabel { font-size: 11px; color: var(--text-hint); margin-bottom: 3px; font-weight: 500; letter-spacing: 0.05em; }
+  .minput { width: 100%; height: 36px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px; font-size: 13px; font-family: var(--sans); outline: none; background: var(--bg); color: var(--text); }
+  .minput:focus { border-color: var(--accent); background: var(--surface); }
+  .mhint { font-size: 10px; color: var(--text-hint); margin-top: 3px; line-height: 1.5; }
+  .mactions { display: flex; gap: 7px; margin-top: 14px; }
+  .mbtn { flex: 1; height: 38px; border-radius: 7px; border: 1px solid var(--border); font-size: 13px; cursor: pointer; font-family: var(--sans); }
+  .mbtn.primary { background: var(--accent); color: #F7F4EF; border-color: var(--accent); font-weight: 500; }
+  .mbtn.primary:hover { background: var(--accent-mid); }
+  .mbtn.secondary { background: var(--surface); color: var(--text); }
 
-  .cfg-modal { background: white; border-radius: 16px; padding: 28px; width: 460px; max-width: 95vw; max-height: 85vh; overflow-y: auto; }
-  .cfg-sec { margin-bottom: 20px; }
-  .cfg-sec-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-  .cfg-input { width: 100%; height: 36px; border: 1px solid var(--border); border-radius: 7px; padding: 0 10px; font-size: 13px; font-family: var(--mono); outline: none; margin-top: 4px; }
-  .cfg-input:focus { border-color: var(--accent); }
+  .cfg-modal { background: var(--surface); border-radius: 12px; padding: 24px; width: 440px; max-width: 95vw; max-height: 85vh; overflow-y: auto; border: 1px solid var(--border); }
+  .cfg-sec { margin-bottom: 18px; }
+  .cfg-sec-title { font-family: var(--serif); font-size: 12px; font-weight: 500; color: var(--accent); margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid var(--border); letter-spacing: 0.05em; }
+  .cfg-input { width: 100%; height: 34px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px; font-size: 12px; font-family: var(--mono); outline: none; margin-top: 3px; background: var(--bg); color: var(--text); }
+  .cfg-input:focus { border-color: var(--accent); background: var(--surface); }
 
-  .receipt { font-family: var(--mono); font-size: 13px; line-height: 1.9; }
-  .r-title { text-align: center; font-size: 15px; font-weight: 700; margin-bottom: 8px; }
-  .r-div { border: none; border-top: 1px dashed var(--border); margin: 8px 0; }
+  /* RECEIPT */
+  .receipt { font-family: var(--mono); font-size: 12px; line-height: 1.9; }
+  .r-title { text-align: center; font-family: var(--serif); font-size: 14px; font-weight: 500; margin-bottom: 8px; color: var(--accent); }
+  .r-div { border: none; border-top: 1px dashed var(--border-dark); margin: 7px 0; }
   .r-row { display: flex; justify-content: space-between; }
-  .r-total { font-size: 16px; font-weight: 700; }
+  .r-total { font-size: 15px; font-weight: 700; color: var(--accent); }
 
-  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1A1816; color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 999; white-space: nowrap; }
+  /* TOAST */
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: #F7F4EF; padding: 9px 18px; border-radius: 20px; font-size: 12px; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 999; white-space: nowrap; font-family: var(--sans); }
   .toast.show { opacity: 1; }
-  .toast.ok { background: var(--accent); }
+  .toast.ok { background: var(--green); }
   .toast.err { background: var(--danger); }
 </style>
 </head>
@@ -157,13 +201,13 @@
 
 <div class="topbar">
   <div class="topbar-left">
-    <div class="logo">● POS 收銀系統</div>
+    <div class="logo">阿公的毛線店 ✦ POS</div>
     <div class="status-pill"><span class="status-dot pending" id="esDot"></span><span id="esTxt">EasyStore</span></div>
     <div class="status-pill"><span class="status-dot pending" id="shDot"></span><span id="shTxt">Google Sheet</span></div>
   </div>
   <div class="topbar-right">
     <span class="order-badge" id="nextOrder">下一單：讀取中...</span>
-    <button class="sync-btn" onclick="openConfig()">⚙ 設定</button>
+    <button class="cfg-btn" onclick="openConfig()">⚙ 設定</button>
   </div>
 </div>
 
@@ -179,19 +223,19 @@
         <span class="search-ico">🔍</span>
         <input class="search-input" id="searchInput" placeholder="搜尋商品名稱、條碼..." oninput="filterProducts(this.value)" />
       </div>
-      <button class="sync-btn" id="syncBtn" onclick="reloadInventory()">
+      <button class="reload-btn" id="reloadBtn" onclick="reloadInventory()">
         <span class="spin" id="syncSpin">↻</span> 重新載入
       </button>
     </div>
     <div class="cat-tabs" id="catTabs"></div>
-    <div class="product-area" id="productGrid"><div class="empty-state">請先完成設定並同步商品</div></div>
+    <div class="product-area" id="productGrid"><div class="empty-state">請先完成設定</div></div>
   </div>
 
   <div class="right">
     <div class="cust-section">
       <div class="sec-label">顧客</div>
       <div class="phone-row">
-        <input class="phone-input" id="phoneInput" type="text" placeholder="電話（09...）或姓名搜尋..." maxlength="30" onkeydown="if(event.key==='Enter')lookupCustomer()" />
+        <input class="phone-input" id="phoneInput" type="text" placeholder="電話（09...）或姓名" maxlength="30" onkeydown="if(event.key==='Enter')lookupCustomer()" />
         <button class="phone-btn" onclick="lookupCustomer()">查詢</button>
       </div>
       <div class="cust-info" id="custInfo"></div>
@@ -219,9 +263,9 @@
 
     <div class="cart-footer">
       <div class="sum-row"><span>小計</span><span class="sum-val" id="subtotalDisp">NT$0</span></div>
-      <div class="disc-disp" id="discDisp" style="display:none;"><span>折扣</span><span class="sum-val" id="discAmt">-NT$0</span></div>
-      <div class="total-row"><span>合計</span><span class="total-val" id="totalDisp">NT$0</span></div>
-      <div class="sec-label" style="margin-bottom:8px;">付款方式</div>
+      <div class="disc-disp" id="discDisp" style="display:none;"><span>折扣</span><span class="sum-val" id="discAmtDisp">-NT$0</span></div>
+      <div class="total-row"><span class="total-label">合計</span><span class="total-val" id="totalDisp">NT$0</span></div>
+      <div class="sec-label" style="margin-bottom:7px;">付款方式</div>
       <div class="pay-grid">
         <button class="pay-btn" onclick="selPay(this,'現金')">現金</button>
         <button class="pay-btn" onclick="selPay(this,'LinePay')">LinePay</button>
@@ -237,12 +281,12 @@
 <!-- 設定 Modal -->
 <div class="overlay" id="cfgModal">
   <div class="cfg-modal">
-    <div class="modal-title">⚙ 系統設定</div>
+    <div class="modal-title">系統設定</div>
     <div class="cfg-sec">
       <div class="cfg-sec-title">EasyStore API</div>
       <div class="mfield">
-        <div class="mlabel">商店網域（例：grandpaknits.easystore.co）</div>
-        <input class="cfg-input" id="cfgDomain" placeholder="yourstore.easystore.co" />
+        <div class="mlabel">商店網域</div>
+        <input class="cfg-input" id="cfgDomain" placeholder="grandpaknits.easy.co" />
       </div>
       <div class="mfield">
         <div class="mlabel">API 存取權杖</div>
@@ -255,12 +299,11 @@
       <div class="mfield">
         <div class="mlabel">Web App URL</div>
         <input class="cfg-input" id="cfgScript" placeholder="https://script.google.com/macros/s/..." />
-        <div class="mhint">Apps Script 部署後取得。若已更新 Script，請重新部署（新版本）</div>
       </div>
     </div>
     <div class="mactions">
       <button class="mbtn secondary" onclick="closeConfig()">取消</button>
-      <button class="mbtn primary" onclick="saveConfig()">儲存並測試連線</button>
+      <button class="mbtn primary" onclick="saveConfig()">儲存並連線</button>
     </div>
   </div>
 </div>
@@ -268,13 +311,13 @@
 <!-- 新顧客 Modal -->
 <div class="overlay" id="newCustModal">
   <div class="modal">
-    <div class="modal-title">新增顧客至 EasyStore</div>
+    <div class="modal-title">新增會員至 EasyStore</div>
     <div class="mfield"><div class="mlabel">姓名</div><input class="minput" id="ncName" placeholder="顧客姓名" /></div>
-    <div class="mfield"><div class="mlabel">電話</div><input class="minput" id="ncPhone" readonly style="background:#f5f5f5;" /></div>
+    <div class="mfield"><div class="mlabel">電話</div><input class="minput" id="ncPhone" readonly style="background:var(--bg);" /></div>
     <div class="mfield"><div class="mlabel">Email（選填）</div><input class="minput" id="ncEmail" placeholder="email@example.com" /></div>
     <div class="mactions">
       <button class="mbtn secondary" onclick="skipNewCust()">跳過（散客）</button>
-      <button class="mbtn primary" onclick="createCustomer()">建立顧客</button>
+      <button class="mbtn primary" onclick="createCustomer()">建立會員</button>
     </div>
   </div>
 </div>
@@ -284,7 +327,7 @@
   <div class="modal">
     <div class="modal-title" style="text-align:center;">✓ 結帳完成</div>
     <div class="receipt" id="receiptContent"></div>
-    <div class="mactions" style="margin-top:16px;">
+    <div class="mactions" style="margin-top:14px;">
       <button class="mbtn primary" onclick="closeReceipt()">完成，下一單</button>
     </div>
   </div>
@@ -293,12 +336,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ─── STATE ────────────────────────────────────────────────
 let cfg = { domain:'', token:'', scriptUrl:'' };
 let products = [], cart = {}, currentCat = 'all', searchQ = '';
 let selectedPay = '', currentCust = null;
 
-// ─── INIT ─────────────────────────────────────────────────
 (function init() {
   const saved = localStorage.getItem('pos_config_v2');
   if (saved) {
@@ -318,7 +359,6 @@ function loadCfgInputs() {
   document.getElementById('cfgScript').value  = cfg.scriptUrl || '';
 }
 
-// ─── CONFIG ───────────────────────────────────────────────
 function openConfig()  { document.getElementById('cfgModal').classList.add('show'); loadCfgInputs(); }
 function closeConfig() { document.getElementById('cfgModal').classList.remove('show'); }
 
@@ -328,41 +368,31 @@ async function saveConfig() {
   cfg.scriptUrl = document.getElementById('cfgScript').value.trim();
   if (!cfg.domain || !cfg.token || !cfg.scriptUrl) { toast('請填寫所有欄位', 'err'); return; }
   localStorage.setItem('pos_config_v2', JSON.stringify(cfg));
-
-  toast('測試 Apps Script 連線...');
-
-  // 1) 測試 Apps Script ping（快速）
+  toast('測試連線中...');
   try {
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 10000);
     const r = await fetch(cfg.scriptUrl + '?action=ping', { signal: ctrl.signal });
     clearTimeout(tid);
     const d = await r.json();
-    if (!d.ok) throw new Error('ping 失敗');
+    if (!d.ok) throw new Error();
     setStatus('sh', true);
-  } catch(e) {
-    setStatus('sh', false);
-    toast('Apps Script 連線失敗，請確認 URL 並重新部署', 'err');
-    return;
-  }
-
-  // 2) 儲存設定，直接進入系統（EasyStore 連線在同步商品時再驗證）
-  setStatus('es', true);
-  toast('設定已儲存！請按「同步商品」載入商品資料', 'ok');
-  document.getElementById('cfgBanner').classList.add('hidden');
-  closeConfig();
-  loadInventory();
-  loadNextOrder();
+    setStatus('es', true);
+    toast('設定已儲存！', 'ok');
+    document.getElementById('cfgBanner').classList.add('hidden');
+    closeConfig();
+    loadInventory();
+    loadNextOrder();
+  } catch(e) { setStatus('sh', false); toast('連線失敗，請確認 Apps Script URL', 'err'); }
 }
 
-function setStatus(which, ok) {
-  document.getElementById(which+'Dot').className = 'status-dot' + (ok ? '' : ' error');
-  document.getElementById(which+'Txt').textContent = which === 'es'
+function setStatus(w, ok) {
+  document.getElementById(w+'Dot').className = 'status-dot' + (ok ? '' : ' error');
+  document.getElementById(w+'Txt').textContent = w === 'es'
     ? (ok ? 'EasyStore 已連線' : 'EasyStore 未連線')
     : (ok ? 'Google Sheet 已連線' : 'Apps Script 未連線');
 }
 
-// ─── APPS SCRIPT HELPER ───────────────────────────────────
 function shGet(params) {
   const qs = Object.entries(params).map(([k,v]) => k+'='+encodeURIComponent(v)).join('&');
   return fetch(cfg.scriptUrl + '?' + qs).then(r => r.json());
@@ -371,7 +401,6 @@ function shPost(body) {
   return fetch(cfg.scriptUrl, { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(body) }).then(r => r.json());
 }
 
-// ─── LOAD INVENTORY ───────────────────────────────────────
 async function loadInventory() {
   try {
     const d = await shGet({ action: 'getInventory' });
@@ -388,28 +417,21 @@ async function loadNextOrder() {
   } catch(e) {}
 }
 
-// ─── RELOAD INVENTORY FROM SHEET (safe, read-only) ───────
 async function reloadInventory() {
   const spin = document.getElementById('syncSpin');
-  const btn  = document.getElementById('syncBtn');
+  const btn  = document.getElementById('reloadBtn');
   spin.classList.add('go'); btn.disabled = true;
-  try {
-    await loadInventory();
-    toast('商品資料已從 Google Sheet 重新載入', 'ok');
-  } catch(e) {
-    toast('載入失敗：' + e.message, 'err');
-  } finally {
-    spin.classList.remove('go'); btn.disabled = false;
-  }
+  try { await loadInventory(); toast('商品資料已重新載入', 'ok'); }
+  catch(e) { toast('載入失敗', 'err'); }
+  finally { spin.classList.remove('go'); btn.disabled = false; }
 }
 
-// ─── CATEGORIES ───────────────────────────────────────────
 function buildCats() {
   const brands = [...new Set(products.map(p => p.brand).filter(Boolean))].sort();
   window._cats = ['全部', ...brands];
 }
 function renderCats() {
-  document.getElementById('catTabs').innerHTML = (window._cats || ['全部']).map(c =>
+  document.getElementById('catTabs').innerHTML = (window._cats||['全部']).map(c =>
     `<div class="cat-tab ${c==='全部'?'active':''}" onclick="selCat('${c.replace(/'/g,"\\'")}',this)">${c}</div>`
   ).join('');
 }
@@ -420,31 +442,36 @@ function selCat(cat, el) {
   renderProducts();
 }
 
-// ─── PRODUCTS ─────────────────────────────────────────────
 function filterProducts(q) { searchQ = q; renderProducts(); }
 function renderProducts() {
   const grid = document.getElementById('productGrid');
   const q = searchQ.toLowerCase();
   const list = products.filter(p => {
     const mc = currentCat === '全部' || p.brand === currentCat;
-    const mq = !q || (p.name||'').toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q) || String(p.barcode||'').includes(q) || String(p.variantId||'').includes(q);
+    const mq = !q || (p.name||'').toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q)
+      || String(p.barcode||'').includes(q) || String(p.variantId||'').includes(q);
     return mc && mq;
   });
   if (!list.length) { grid.innerHTML = '<div class="empty-state">找不到符合商品</div>'; return; }
   grid.innerHTML = list.map(p => {
     const s = parseInt(p.stock)||0;
     const sl = s===0 ? '<span class="s-out">已售完</span>' : s<=3 ? `<span class="s-low">庫存 ${s}</span>` : `<span class="s-ok">庫存 ${s}</span>`;
+    const imgHtml = p.imageUrl
+      ? `<img class="prod-img" src="${esc(p.imageUrl)}" alt="${esc(p.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      + `<div class="prod-img-placeholder" style="display:none;">🧶</div>`
+      : `<div class="prod-img-placeholder">🧶</div>`;
     return `<div class="prod-card ${s===0?'out':''}" onclick="${s>0?`addCart('${p.variantId}')`:''}" >
-      <div class="prod-name">${esc(p.name)}</div>
-      <div class="prod-brand">${esc(p.brand)}</div>
-      <div class="prod-price">NT$${Number(p.price||0).toLocaleString()}</div>
-      <div class="prod-stock">${sl}</div>
-      <div class="prod-barcode">${p.barcode||p.variantId}</div>
+      ${imgHtml}
+      <div class="prod-body">
+        <div class="prod-name">${esc(p.name)}</div>
+        <div class="prod-brand">${esc(p.brand)}</div>
+        <div class="prod-price">NT$${Number(p.price||0).toLocaleString()}</div>
+        <div class="prod-stock">${sl}</div>
+      </div>
     </div>`;
   }).join('');
 }
 
-// ─── CART ─────────────────────────────────────────────────
 function addCart(vid) {
   const p = products.find(x => String(x.variantId)===String(vid));
   if (!p || p.stock <= 0) return;
@@ -476,8 +503,12 @@ function renderCart() {
     el.innerHTML = '<div class="cart-empty">掃描或點選商品<br>開始加入購物車</div>';
     document.getElementById('checkoutBtn').disabled = true; return;
   }
-  el.innerHTML = items.map(({product:p,qty}) => `
-    <div class="cart-item">
+  el.innerHTML = items.map(({product:p,qty}) => {
+    const thumb = p.imageUrl
+      ? `<img class="cart-item-thumb" src="${esc(p.imageUrl)}" alt="" loading="lazy" onerror="this.src=''">`
+      : `<div class="cart-item-thumb" style="display:flex;align-items:center;justify-content:center;font-size:16px;">🧶</div>`;
+    return `<div class="cart-item">
+      ${thumb}
       <div class="ci-info">
         <div class="ci-name">${esc(p.name)}</div>
         <div class="ci-brand">${esc(p.brand)}</div>
@@ -490,11 +521,11 @@ function renderCart() {
       </div>
       <div class="ci-total">NT$${(Number(p.price||0)*qty).toLocaleString()}</div>
       <button class="rm-btn" onclick="rmItem('${p.variantId}')">×</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   if (selectedPay) document.getElementById('checkoutBtn').disabled = false;
 }
 
-// ─── TOTAL ────────────────────────────────────────────────
 function calcTotal() {
   const items = Object.values(cart);
   const sub  = items.reduce((s,{product:p,qty}) => s + Number(p.price||0)*qty, 0);
@@ -507,12 +538,11 @@ function calcTotal() {
   document.getElementById('subtotalDisp').textContent = 'NT$' + sub.toLocaleString();
   document.getElementById('totalDisp').textContent    = 'NT$' + total.toLocaleString();
   const dd = document.getElementById('discDisp');
-  if (disc > 0) { dd.style.display='flex'; document.getElementById('discAmt').textContent = '-NT$'+Math.round(disc).toLocaleString(); }
+  if (disc > 0) { dd.style.display='flex'; document.getElementById('discAmtDisp').textContent = '-NT$'+Math.round(disc).toLocaleString(); }
   else dd.style.display = 'none';
   document.getElementById('checkoutBtn').disabled = !(items.length && selectedPay);
 }
 
-// ─── PAYMENT ──────────────────────────────────────────────
 function selPay(el, method) {
   selectedPay = method;
   document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('sel'));
@@ -520,35 +550,24 @@ function selPay(el, method) {
   calcTotal();
 }
 
-// ─── CUSTOMER ─────────────────────────────────────────────
 async function lookupCustomer() {
   const query = document.getElementById('phoneInput').value.trim();
   if (!query) return;
   if (!cfg.scriptUrl || !cfg.token) { toast('請先完成設定', 'err'); return; }
   toast('查詢中...');
   try {
-    // 判斷是電話還是姓名
     const isPhone = /^[0-9+\-\s]+$/.test(query);
-    const d = await shGet({
-      action: 'lookupCustomer',
-      query,
-      isPhone: isPhone ? '1' : '0',
-      token: cfg.token,
-      domain: cfg.domain
-    });
+    const d = await shGet({ action:'lookupCustomer', query, isPhone: isPhone?'1':'0', token:cfg.token, domain:cfg.domain });
     const info = document.getElementById('custInfo');
     if (d.found) {
       currentCust = d.customer;
       info.innerHTML = `<div class="cust-name">${esc((d.customer.firstName||'')+(d.customer.lastName?' '+d.customer.lastName:''))}</div>
         <div class="cust-sub">累計訂單 ${d.customer.ordersCount||0} 筆・${d.customer.phone||query}</div>`;
-      info.classList.add('show');
-      toast('找到會員', 'ok');
+      info.classList.add('show'); toast('找到會員', 'ok');
     } else {
       currentCust = null;
-      info.innerHTML = `<div class="cust-name">未找到會員 <span class="new-badge">新顧客</span></div>
-        <div class="cust-sub">是否建立新會員？</div>`;
+      info.innerHTML = `<div class="cust-name">未找到會員 <span class="new-badge">新顧客</span></div><div class="cust-sub">是否建立新會員？</div>`;
       info.classList.add('show');
-      // 預填新顧客表單
       document.getElementById('ncPhone').value = isPhone ? query : '';
       document.getElementById('ncName').value  = isPhone ? '' : query;
       document.getElementById('ncEmail').value = '';
@@ -556,17 +575,17 @@ async function lookupCustomer() {
     }
   } catch(e) { toast('查詢失敗', 'err'); }
 }
+
 function skipNewCust() {
   document.getElementById('newCustModal').classList.remove('show');
-  const phone = document.getElementById('phoneInput').value.trim();
-  const info  = document.getElementById('custInfo');
-  info.innerHTML = `<div class="cust-name">散客 <span class="new-badge">未登錄</span></div><div class="cust-sub">${phone}</div>`;
+  const info = document.getElementById('custInfo');
+  info.innerHTML = `<div class="cust-name">散客 <span class="new-badge">未登錄</span></div>`;
   info.classList.add('show');
 }
 async function createCustomer() {
-  const name = document.getElementById('ncName').value.trim();
-  const phone= document.getElementById('ncPhone').value.trim();
-  const email= document.getElementById('ncEmail').value.trim();
+  const name  = document.getElementById('ncName').value.trim();
+  const phone = document.getElementById('ncPhone').value.trim();
+  const email = document.getElementById('ncEmail').value.trim();
   if (!name) { toast('請輸入姓名', 'err'); return; }
   try {
     const d = await shPost({ action:'createCustomer', firstName:name, phone, email, token:cfg.token, domain:cfg.domain });
@@ -580,13 +599,11 @@ async function createCustomer() {
   } catch(e) { toast('建立失敗：' + e.message, 'err'); }
 }
 
-// ─── CHECKOUT ─────────────────────────────────────────────
 async function checkout() {
   const items = Object.values(cart);
   if (!items.length || !selectedPay) return;
   const btn = document.getElementById('checkoutBtn');
   btn.disabled = true; btn.textContent = '處理中...';
-
   const sub  = items.reduce((s,{product:p,qty}) => s + Number(p.price||0)*qty, 0);
   const type = document.getElementById('discType').value;
   const val  = parseFloat(document.getElementById('discVal').value) || 0;
@@ -596,34 +613,18 @@ async function checkout() {
   const total = sub - disc;
   const now   = new Date().toLocaleString('zh-TW');
   const itemsPayload = items.map(({product:p,qty}) => ({
-    variantId: p.variantId, barcode: p.barcode||'', brand: p.brand||'', name: p.name||'', price: p.price, qty, total: Number(p.price)*qty
+    variantId:p.variantId, barcode:p.barcode||'', brand:p.brand||'', name:p.name||'', price:p.price, qty, total:Number(p.price)*qty
   }));
-
   try {
-    // 1) EasyStore 建立訂單（透過 Apps Script）
     toast('在 EasyStore 建立訂單...');
-    const esResult = await shPost({
-      action: 'createESOrder', items: itemsPayload, payment: selectedPay,
-      customerId: currentCust?.id || null, token: cfg.token, domain: cfg.domain
-    });
+    const esResult = await shPost({ action:'createESOrder', items:itemsPayload, payment:selectedPay, customerId:currentCust?.id||null, token:cfg.token, domain:cfg.domain });
     if (esResult.error) throw new Error(esResult.error);
     const orderId = esResult.orderId;
-
-    // 2) 寫入 Google Sheet
     toast('同步 Google Sheet...');
-    const shResult = await shPost({
-      action: 'checkout', orderId, items: itemsPayload,
-      subtotal: sub, discType: type, discAmt: Math.round(disc), total,
-      payment: selectedPay,
-      customerName: currentCust ? ((currentCust.firstName||'')+(currentCust.lastName?' '+currentCust.lastName:'')) : '散客',
-      timestamp: now
-    });
-    if (shResult.error) throw new Error('Sheet 寫入失敗：' + shResult.error);
-
-    // 3) 顯示收據
+    const shResult = await shPost({ action:'checkout', orderId, items:itemsPayload, subtotal:sub, discType:type, discAmt:Math.round(disc), total, payment:selectedPay, customerName:currentCust?((currentCust.firstName||'')+(currentCust.lastName?' '+currentCust.lastName:'')).trim():'散客', timestamp:now });
+    if (shResult.error) throw new Error('Sheet 寫入失敗');
     showReceipt(orderId, items, total, disc, selectedPay, now);
     loadNextOrder();
-
   } catch(e) {
     toast('結帳失敗：' + e.message, 'err');
     btn.disabled = false; btn.textContent = '結帳並同步';
@@ -638,8 +639,8 @@ function showReceipt(orderId, items, total, disc, pay, now) {
     ${rows}<hr class="r-div">
     ${disc>0?`<div class="r-row"><span>折扣</span><span>-NT$${Math.round(disc).toLocaleString()}</span></div>`:''}
     <div class="r-row r-total"><span>合計</span><span>NT$${total.toLocaleString()}</span></div>
-    <div class="r-row" style="font-size:11px;color:#888;margin-top:4px;"><span>付款</span><span>${pay}</span></div>
-    <div class="r-row" style="font-size:11px;color:#888;"><span>時間</span><span>${now}</span></div>`;
+    <div class="r-row" style="font-size:10px;color:var(--text-hint);margin-top:4px;"><span>付款</span><span>${pay}</span></div>
+    <div class="r-row" style="font-size:10px;color:var(--text-hint);"><span>時間</span><span>${now}</span></div>`;
   document.getElementById('receiptModal').classList.add('show');
 }
 function closeReceipt() {
@@ -647,7 +648,7 @@ function closeReceipt() {
   clearCart(); loadInventory();
 }
 
-// ─── BARCODE SCANNER ──────────────────────────────────────
+// 條碼掃描器
 let buf = '', bufTimer;
 document.addEventListener('keydown', e => {
   if (['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
@@ -664,7 +665,6 @@ document.addEventListener('keydown', e => {
   if (e.key.length===1) { buf += e.key; clearTimeout(bufTimer); bufTimer = setTimeout(()=>buf='', 200); }
 });
 
-// ─── UTILS ────────────────────────────────────────────────
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(msg, type='') {
   const t = document.getElementById('toast');
