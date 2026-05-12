@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POS 收銀系統</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #F5F3EE;
+    --surface: #FFFFFF;
+    --border: #E2DDD5;
+    --text: #1A1816;
+    --muted: #7A756E;
+    --accent: #2C5F3E;
+    --accent-light: #EAF2EC;
+    --danger: #C0392B;
+    --danger-light: #FDECEA;
+    --warning: #B8860B;
+    --warning-light: #FFF8E6;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Noto Sans TC', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+  /* TOP BAR */
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: 52px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .topbar-left { display: flex; align-items: center; gap: 20px; }
+  .logo { font-weight: 700; font-size: 15px; letter-spacing: 0.05em; color: var(--accent); }
+  .status-pill { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #27AE60; }
+  .status-dot.error { background: var(--danger); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .order-badge { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+
+  /* CONFIG PANEL */
+  .config-banner { background: var(--warning-light); border-bottom: 1px solid #F0D080; padding: 10px 20px; display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--warning); flex-shrink: 0; }
+  .config-banner.hidden { display: none; }
+  .config-btn { background: var(--warning); color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: var(--sans); }
+
+  /* MAIN LAYOUT */
+  .main { display: grid; grid-template-columns: 1fr 360px; flex: 1; overflow: hidden; }
+
+  /* LEFT PANEL */
+  .left { display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); }
+
+  /* SEARCH BAR */
+  .search-area { padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; gap: 8px; flex-shrink: 0; }
+  .search-wrap { flex: 1; position: relative; }
+  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 16px; height: 16px; }
+  .search-input { width: 100%; height: 38px; padding: 0 12px 0 34px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: var(--sans); background: var(--bg); color: var(--text); outline: none; transition: border 0.15s; }
+  .search-input:focus { border-color: var(--accent); background: white; }
+  .sync-btn { height: 38px; padding: 0 14px; border: 1px solid var(--border); border-radius: 8px; background: white; font-size: 13px; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: var(--sans); white-space: nowrap; }
+  .sync-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .sync-icon { font-size: 14px; display: inline-block; }
+  .sync-icon.spinning { animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* CATEGORY TABS */
+  .cat-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); background: var(--surface); overflow-x: auto; flex-shrink: 0; padding: 0 16px; }
+  .cat-tab { padding: 10px 14px; font-size: 13px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.15s; }
+  .cat-tab:hover { color: var(--text); }
+  .cat-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+  /* PRODUCT GRID */
+  .product-area { flex: 1; overflow-y: auto; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; align-content: start; }
+  .product-area::-webkit-scrollbar { width: 6px; }
+  .product-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .prod-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.15s; position: relative; }
+  .prod-card:hover:not(.out) { border-color: var(--accent); background: var(--accent-light); }
+  .prod-card:active:not(.out) { transform: scale(0.97); }
+  .prod-card.out { opacity: 0.45; cursor: not-allowed; }
+  .prod-name { font-size: 12.5px; font-weight: 500; color: var(--text); margin-bottom: 4px; line-height: 1.4; }
+  .prod-brand { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .prod-price { font-family: var(--mono); font-size: 14px; font-weight: 500; color: var(--text); }
+  .prod-stock { font-size: 11px; margin-top: 4px; }
+  .stock-ok { color: #27AE60; }
+  .stock-low { color: var(--warning); }
+  .stock-out { color: var(--danger); }
+  .barcode-label { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+  /* EMPTY STATE */
+  .empty { grid-column: 1/-1; text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 14px; }
+
+  /* RIGHT PANEL - CART */
+  .right { display: flex; flex-direction: column; background: var(--surface); overflow: hidden; }
+
+  /* CUSTOMER SECTION */
+  .customer-section { border-bottom: 1px solid var(--border); padding: 12px 16px; flex-shrink: 0; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  .phone-wrap { display: flex; gap: 6px; }
+  .phone-input { flex: 1; height: 34px; border: 1px solid var(--border); border-radius: 7px; padding: 0 10px; font-size: 13px; font-family: var(--mono); background: var(--bg); color: var(--text); outline: none; }
+  .phone-input:focus { border-color: var(--accent); background: white; }
+  .phone-btn { height: 34px; padding: 0 12px; background: var(--accent); color: white; border: none; border-radius: 7px; font-size: 12px; cursor: pointer; font-family: var(--sans); white-space: nowrap; }
+  .customer-info { margin-top: 8px; background: var(--accent-light); border: 1px solid #C3DECA; border-radius: 7px; padding: 8px 10px; font-size: 13px; display: none; }
+  .customer-info.show { display: block; }
+  .customer-name { font-weight: 500; color: var(--accent); }
+  .customer-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .customer-new-badge { display: inline-block; background: #FFF0C0; border: 1px solid #F0D080; color: var(--warning); font-size: 10px; padding: 1px 6px; border-radius: 10px; margin-left: 6px; }
+
+  /* CART ITEMS */
+  .cart-header { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .cart-title { font-size: 13px; font-weight: 700; letter-spacing: 0.05em; color: var(--text); }
+  .clear-btn { font-size: 12px; color: var(--muted); background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+  .clear-btn:hover { color: var(--danger); background: var(--danger-light); }
+
+  .cart-items { flex: 1; overflow-y: auto; padding: 8px; }
+  .cart-items::-webkit-scrollbar { width: 4px; }
+  .cart-items::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .cart-empty { text-align: center; padding: 2rem; color: var(--muted); font-size: 13px; line-height: 2; }
+
+  .cart-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px; border-radius: 8px; margin-bottom: 2px; }
+  .cart-item:hover { background: var(--bg); }
+  .cart-item-info { flex: 1; min-width: 0; }
+  .cart-item-name { font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cart-item-brand { font-size: 11px; color: var(--muted); }
+  .cart-item-unit { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .qty-ctrl { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .qty-btn { width: 22px; height: 22px; border: 1px solid var(--border); border-radius: 5px; background: white; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; color: var(--text); line-height: 1; }
+  .qty-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .qty-num { font-family: var(--mono); font-size: 13px; min-width: 20px; text-align: center; }
+  .cart-item-total { font-family: var(--mono); font-size: 13px; font-weight: 500; min-width: 58px; text-align: right; flex-shrink: 0; }
+  .remove-btn { width: 18px; height: 18px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .remove-btn:hover { color: var(--danger); }
+
+  /* DISCOUNT */
+  .discount-section { border-top: 1px solid var(--border); padding: 10px 16px; flex-shrink: 0; }
+  .discount-row { display: flex; gap: 6px; align-items: center; }
+  .disc-type-select { height: 32px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 12px; font-family: var(--sans); color: var(--text); padding: 0 6px; outline: none; }
+  .disc-input { flex: 1; height: 32px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 13px; font-family: var(--mono); color: var(--text); padding: 0 8px; outline: none; }
+  .disc-input:focus, .disc-type-select:focus { border-color: var(--accent); background: white; }
+
+  /* FOOTER */
+  .cart-footer { border-top: 1px solid var(--border); padding: 12px 16px; flex-shrink: 0; }
+  .summary-row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; }
+  .summary-val { font-family: var(--mono); }
+  .discount-row-display { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--danger); margin-bottom: 5px; }
+  .total-row { display: flex; justify-content: space-between; font-size: 18px; font-weight: 700; margin: 10px 0 12px; }
+  .total-val { font-family: var(--mono); color: var(--accent); }
+
+  /* PAYMENT METHODS */
+  .pay-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
+  .pay-method { height: 32px; border: 1px solid var(--border); border-radius: 7px; background: white; font-size: 11.5px; cursor: pointer; font-family: var(--sans); color: var(--muted); transition: all 0.15s; }
+  .pay-method:hover { border-color: var(--accent); color: var(--accent); }
+  .pay-method.selected { border-color: var(--accent); background: var(--accent); color: white; font-weight: 500; }
+
+  .checkout-btn { width: 100%; height: 44px; background: var(--accent); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: var(--sans); letter-spacing: 0.03em; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .checkout-btn:hover:not(:disabled) { background: #1E4A2E; }
+  .checkout-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+  .checkout-btn.loading { background: var(--muted); }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: white; border-radius: 16px; padding: 24px; width: 420px; max-width: 95vw; }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+  .modal-field { margin-bottom: 12px; }
+  .modal-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+  .modal-input { width: 100%; height: 38px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; font-size: 14px; font-family: var(--sans); outline: none; }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .modal-btn { flex: 1; height: 40px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; cursor: pointer; font-family: var(--sans); }
+  .modal-btn.primary { background: var(--accent); color: white; border-color: var(--accent); font-weight: 600; }
+  .modal-btn.secondary { background: white; color: var(--text); }
+
+  /* CONFIG MODAL */
+  .config-modal { background: white; border-radius: 16px; padding: 28px; width: 480px; max-width: 95vw; max-height: 85vh; overflow-y: auto; }
+  .config-section { margin-bottom: 20px; }
+  .config-section-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .config-field { margin-bottom: 10px; }
+  .config-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .config-input { width: 100%; height: 36px; border: 1px solid var(--border); border-radius: 7px; padding: 0 10px; font-size: 13px; font-family: var(--mono); outline: none; }
+  .config-input:focus { border-color: var(--accent); }
+  .config-hint { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1A1816; color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.25s; z-index: 999; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+  .toast.success { background: var(--accent); }
+  .toast.error { background: var(--danger); }
+
+  /* RECEIPT MODAL */
+  .receipt { font-family: var(--mono); font-size: 13px; line-height: 1.8; }
+  .receipt-title { text-align: center; font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .receipt-divider { border: none; border-top: 1px dashed var(--border); margin: 8px 0; }
+  .receipt-row { display: flex; justify-content: space-between; }
+  .receipt-total { font-size: 16px; font-weight: 700; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">● POS 收銀系統</div>
+    <div class="status-pill">
+      <span class="status-dot" id="easyStoreStatus"></span>
+      <span id="easyStoreStatusText">EasyStore</span>
+    </div>
+    <div class="status-pill">
+      <span class="status-dot" id="sheetStatus"></span>
+      <span id="sheetStatusText">Google Sheet</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="order-badge" id="nextOrderBadge">下一單：讀取中...</div>
+    <button class="sync-btn" onclick="openConfig()" style="background:#F5F3EE;">⚙ 設定</button>
+  </div>
+</div>
+
+<!-- CONFIG BANNER -->
+<div class="config-banner" id="configBanner">
+  ⚠ 尚未設定 API 金鑰，請先完成設定才能使用
+  <button class="config-btn" onclick="openConfig()">立即設定</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- LEFT -->
+  <div class="left">
+    <div class="search-area">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="搜尋商品名稱、條碼..." oninput="filterProducts(this.value)" />
+      </div>
+      <button class="sync-btn" onclick="syncProducts()" id="syncBtn">
+        <span class="sync-icon" id="syncIcon">↻</span> 同步商品
+      </button>
+    </div>
+    <div class="cat-tabs" id="catTabs"></div>
+    <div class="product-area" id="productGrid"></div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <!-- Customer -->
+    <div class="customer-section">
+      <div class="section-label">顧客</div>
+      <div class="phone-wrap">
+        <input type="tel" class="phone-input" id="phoneInput" placeholder="輸入電話號碼..." maxlength="15" />
+        <button class="phone-btn" onclick="lookupCustomer()">查詢</button>
+      </div>
+      <div class="customer-info" id="customerInfo"></div>
+    </div>
+
+    <!-- Cart header -->
+    <div class="cart-header">
+      <span class="cart-title">購物車</span>
+      <button class="clear-btn" onclick="clearCart()">清空</button>
+    </div>
+    <div class="cart-items" id="cartItems">
+      <div class="cart-empty">掃描或點選商品<br>開始加入購物車</div>
+    </div>
+
+    <!-- Discount -->
+    <div class="discount-section">
+      <div class="section-label">折扣</div>
+      <div class="discount-row">
+        <select class="disc-type-select" id="discType" onchange="calcTotal()">
+          <option value="none">無折扣</option>
+          <option value="amount">折抵金額 NT$</option>
+          <option value="percent">幾折 (例：8=八折)</option>
+        </select>
+        <input type="number" class="disc-input" id="discValue" placeholder="0" min="0" oninput="calcTotal()" />
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="cart-footer">
+      <div class="summary-row"><span>小計</span><span class="summary-val" id="subtotalDisplay">NT$0</span></div>
+      <div class="discount-row-display" id="discountDisplay" style="display:none;"><span>折扣</span><span class="summary-val" id="discountAmtDisplay">-NT$0</span></div>
+      <div class="total-row"><span>合計</span><span class="total-val" id="totalDisplay">NT$0</span></div>
+
+      <div class="section-label" style="margin-bottom:8px;">付款方式</div>
+      <div class="pay-methods" id="payMethods">
+        <button class="pay-method" onclick="selectPay(this,'現金')">現金</button>
+        <button class="pay-method" onclick="selectPay(this,'LinePay')">LinePay</button>
+        <button class="pay-method" onclick="selectPay(this,'信用卡')">信用卡</button>
+        <button class="pay-method" onclick="selectPay(this,'街口支付')">街口支付</button>
+        <button class="pay-method" onclick="selectPay(this,'匯款轉帳')">匯款轉帳</button>
+      </div>
+
+      <button class="checkout-btn" id="checkoutBtn" onclick="startCheckout()" disabled>
+        結帳並同步
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- CONFIG MODAL -->
+<div class="modal-overlay" id="configModal">
+  <div class="config-modal">
+    <div class="modal-title">⚙ 系統設定</div>
+
+    <div class="config-section">
+      <div class="config-section-title">EasyStore API</div>
+      <div class="config-field">
+        <div class="config-label">商店網域（例：yourstore.easystore.co）</div>
+        <input class="config-input" id="cfg_domain" placeholder="yourstore.easystore.co" />
+      </div>
+      <div class="config-field">
+        <div class="config-label">Access Token（EasyStore 後台 → 設定 → API）</div>
+        <input class="config-input" id="cfg_token" type="password" placeholder="貼上 Access Token" />
+        <div class="config-hint">在 EasyStore 後台左側選單「設定」→「API 金鑰」取得</div>
+      </div>
+    </div>
+
+    <div class="config-section">
+      <div class="config-section-title">Google Apps Script</div>
+      <div class="config-field">
+        <div class="config-label">Apps Script 網址（Web App URL）</div>
+        <input class="config-input" id="cfg_scriptUrl" placeholder="https://script.google.com/macros/s/..." />
+        <div class="config-hint">部署 Apps Script 後取得，用來串接 Google Sheet</div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeConfig()">取消</button>
+      <button class="modal-btn primary" onclick="saveConfig()">儲存並測試連線</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW CUSTOMER MODAL -->
+<div class="modal-overlay" id="newCustModal">
+  <div class="modal">
+    <div class="modal-title">新增顧客至 EasyStore</div>
+    <div class="modal-field">
+      <div class="modal-label">姓名</div>
+      <input class="modal-input" id="nc_name" placeholder="顧客姓名" />
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">電話</div>
+      <input class="modal-input" id="nc_phone" readonly style="background:#f5f5f5;" />
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">Email（選填）</div>
+      <input class="modal-input" id="nc_email" placeholder="email@example.com" />
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeNewCust()">跳過（散客）</button>
+      <button class="modal-btn primary" onclick="createCustomer()">建立顧客</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div class="modal-overlay" id="receiptModal">
+  <div class="modal">
+    <div class="modal-title" style="text-align:center;">✓ 結帳完成</div>
+    <div class="receipt" id="receiptContent"></div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="modal-btn primary" onclick="closeReceipt()">完成，下一單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let config = {
+  domain: '',
+  token: '',
+  scriptUrl: ''
+};
+let products = [];
+let cart = {};
+let currentCat = 'all';
+let searchQ = '';
+let selectedPayment = '';
+let currentCustomer = null;
+let nextOrderNum = null;
+let categories = [];
+
+// ─── INIT ─────────────────────────────────────────────────
+function init() {
+  const saved = localStorage.getItem('pos_config');
+  if (saved) {
+    config = JSON.parse(saved);
+    if (config.domain && config.token && config.scriptUrl) {
+      document.getElementById('configBanner').classList.add('hidden');
+      updateStatus(true, true);
+      loadProductsFromSheet();
+      fetchNextOrderNumber();
+    }
+  }
+  loadCfgInputs();
+}
+
+function loadCfgInputs() {
+  document.getElementById('cfg_domain').value = config.domain || '';
+  document.getElementById('cfg_token').value = config.token || '';
+  document.getElementById('cfg_scriptUrl').value = config.scriptUrl || '';
+}
+
+// ─── STATUS ───────────────────────────────────────────────
+function updateStatus(esOk, sheetOk) {
+  document.getElementById('easyStoreStatus').className = 'status-dot' + (esOk ? '' : ' error');
+  document.getElementById('easyStoreStatusText').textContent = esOk ? 'EasyStore 已連線' : 'EasyStore 未連線';
+  document.getElementById('sheetStatus').className = 'status-dot' + (sheetOk ? '' : ' error');
+  document.getElementById('sheetStatusText').textContent = sheetOk ? 'Google Sheet 已連線' : 'Google Sheet 未連線';
+}
+
+// ─── CONFIG ───────────────────────────────────────────────
+function openConfig() { document.getElementById('configModal').classList.add('show'); loadCfgInputs(); }
+function closeConfig() { document.getElementById('configModal').classList.remove('show'); }
+
+async function saveConfig() {
+  config.domain = document.getElementById('cfg_domain').value.trim().replace(/\/$/, '');
+  config.token  = document.getElementById('cfg_token').value.trim();
+  config.scriptUrl = document.getElementById('cfg_scriptUrl').value.trim();
+  localStorage.setItem('pos_config', JSON.stringify(config));
+
+  if (!config.domain || !config.token || !config.scriptUrl) {
+    showToast('請填寫所有必填欄位', 'error'); return;
+  }
+
+  showToast('測試連線中...', '');
+  try {
+    // Test EasyStore
+    const esResp = await esGet('/admin/products.json?limit=1');
+    if (!esResp.ok) throw new Error('EasyStore');
+    updateStatus(true, false);
+
+    // Test Sheet
+    const shResp = await fetch(config.scriptUrl + '?action=ping');
+    if (!shResp.ok) throw new Error('Sheet');
+    updateStatus(true, true);
+
+    document.getElementById('configBanner').classList.add('hidden');
+    showToast('連線成功！', 'success');
+    closeConfig();
+    loadProductsFromSheet();
+    fetchNextOrderNumber();
+  } catch(e) {
+    showToast('連線失敗：' + e.message, 'error');
+    updateStatus(e.message !== 'EasyStore', e.message !== 'Sheet');
+  }
+}
+
+// ─── EASYSTORE API HELPERS ────────────────────────────────
+function esGet(path) {
+  return fetch(`https://${config.domain}${path}`, {
+    headers: { 'X-EasyStore-Access-Token': config.token, 'Content-Type': 'application/json' }
+  });
+}
+function esPost(path, body) {
+  return fetch(`https://${config.domain}${path}`, {
+    method: 'POST',
+    headers: { 'X-EasyStore-Access-Token': config.token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+}
+
+// ─── SHEET API HELPER ─────────────────────────────────────
+function sheetPost(data) {
+  return fetch(config.scriptUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(data)
+  });
+}
+
+// ─── FETCH NEXT ORDER NUMBER ──────────────────────────────
+async function fetchNextOrderNumber() {
+  if (!config.scriptUrl) return;
+  try {
+    const resp = await fetch(config.scriptUrl + '?action=getNextOrder');
+    const data = await resp.json();
+    nextOrderNum = data.nextOrder;
+    document.getElementById('nextOrderBadge').textContent = `下一單：#${nextOrderNum}`;
+  } catch(e) {
+    document.getElementById('nextOrderBadge').textContent = '下一單：讀取失敗';
+  }
+}
+
+// ─── LOAD PRODUCTS FROM SHEET ─────────────────────────────
+async function loadProductsFromSheet() {
+  if (!config.scriptUrl) return;
+  try {
+    const resp = await fetch(config.scriptUrl + '?action=getInventory');
+    const data = await resp.json();
+    products = data.products || [];
+    buildCategories();
+    renderCategories();
+    renderProducts();
+  } catch(e) {
+    showToast('無法載入商品資料', 'error');
+  }
+}
+
+// ─── SYNC FROM EASYSTORE ──────────────────────────────────
+async function syncProducts() {
+  if (!config.domain || !config.token) { showToast('請先完成設定', 'error'); return; }
+  const icon = document.getElementById('syncIcon');
+  icon.classList.add('spinning');
+  document.getElementById('syncBtn').disabled = true;
+  try {
+    // EasyStore returns variants with inventory
+    const resp = await esGet('/admin/variants.json?limit=250&fields=id,barcode,title,price,inventory_quantity,product_id');
+    if (!resp.ok) throw new Error();
+    const data = await resp.json();
+    // Also get product names/brands
+    const pResp = await esGet('/admin/products.json?limit=250&fields=id,title,vendor,variants');
+    const pData = await pResp.json();
+
+    // Build a map
+    const productMap = {};
+    (pData.products || []).forEach(p => {
+      (p.variants || []).forEach(v => {
+        productMap[v.id] = { productName: p.title, brand: p.vendor };
+      });
+    });
+
+    // Push to Sheet for cache update
+    await sheetPost({ action: 'syncFromEasyStore', variants: data.variants || [], productMap });
+    showToast('商品已從 EasyStore 同步', 'success');
+    await loadProductsFromSheet();
+  } catch(e) {
+    showToast('同步失敗，請確認 API 設定', 'error');
+  } finally {
+    icon.classList.remove('spinning');
+    document.getElementById('syncBtn').disabled = false;
+  }
+}
+
+// ─── CATEGORIES ───────────────────────────────────────────
+function buildCategories() {
+  const brands = [...new Set(products.map(p => p.brand).filter(Boolean))].sort();
+  categories = ['全部', ...brands];
+}
+
+function renderCategories() {
+  const tabs = document.getElementById('catTabs');
+  tabs.innerHTML = categories.map(c =>
+    `<div class="cat-tab ${c === '全部' ? 'active' : ''}" onclick="selectCat('${c}', this)">${c}</div>`
+  ).join('');
+}
+
+function selectCat(cat, el) {
+  currentCat = cat;
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderProducts();
+}
+
+// ─── PRODUCT RENDER ───────────────────────────────────────
+function filterProducts(q) { searchQ = q; renderProducts(); }
+
+function renderProducts() {
+  const grid = document.getElementById('productGrid');
+  const q = searchQ.toLowerCase();
+  const filtered = products.filter(p => {
+    const matchCat = currentCat === '全部' || p.brand === currentCat;
+    const matchQ = !q || (p.name || '').toLowerCase().includes(q)
+      || (p.brand || '').toLowerCase().includes(q)
+      || String(p.barcode || '').includes(q)
+      || String(p.variantId || '').includes(q);
+    return matchCat && matchQ;
+  });
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty">找不到符合的商品</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(p => {
+    const stock = parseInt(p.stock) || 0;
+    const isOut = stock === 0;
+    const stockHtml = stock === 0
+      ? '<span class="stock-out">已售完</span>'
+      : stock <= 3
+      ? `<span class="stock-low">庫存 ${stock}</span>`
+      : `<span class="stock-ok">庫存 ${stock}</span>`;
+    return `<div class="prod-card ${isOut ? 'out' : ''}" onclick="${isOut ? '' : `addToCart('${p.variantId}')`}">
+      <div class="prod-name">${escHtml(p.name || '')}</div>
+      <div class="prod-brand">${escHtml(p.brand || '')}</div>
+      <div class="prod-price">NT$${Number(p.price || 0).toLocaleString()}</div>
+      <div class="prod-stock">${stockHtml}</div>
+      <div class="barcode-label">${p.barcode || p.variantId}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── CART ─────────────────────────────────────────────────
+function addToCart(variantId) {
+  const p = products.find(x => String(x.variantId) === String(variantId));
+  if (!p) return;
+  const inCart = cart[variantId] ? cart[variantId].qty : 0;
+  if (inCart >= (p.stock || 0)) { showToast('庫存不足', 'error'); return; }
+  if (!cart[variantId]) cart[variantId] = { product: p, qty: 0 };
+  cart[variantId].qty++;
+  renderCart();
+  calcTotal();
+}
+
+function changeQty(variantId, delta) {
+  if (!cart[variantId]) return;
+  cart[variantId].qty += delta;
+  if (cart[variantId].qty <= 0) delete cart[variantId];
+  renderCart();
+  calcTotal();
+}
+
+function removeItem(variantId) { delete cart[variantId]; renderCart(); calcTotal(); }
+function clearCart() { cart = {}; currentCustomer = null; document.getElementById('customerInfo').classList.remove('show'); document.getElementById('phoneInput').value = ''; renderCart(); calcTotal(); }
+
+function renderCart() {
+  const el = document.getElementById('cartItems');
+  const items = Object.values(cart);
+  if (!items.length) {
+    el.innerHTML = '<div class="cart-empty">掃描或點選商品<br>開始加入購物車</div>';
+    document.getElementById('checkoutBtn').disabled = true;
+    return;
+  }
+  el.innerHTML = items.map(({ product: p, qty }) => `
+    <div class="cart-item">
+      <div class="cart-item-info">
+        <div class="cart-item-name">${escHtml(p.name || '')}</div>
+        <div class="cart-item-brand">${escHtml(p.brand || '')}</div>
+        <div class="cart-item-unit">NT$${Number(p.price||0).toLocaleString()} × ${qty}</div>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="changeQty('${p.variantId}',-1)">−</button>
+        <span class="qty-num">${qty}</span>
+        <button class="qty-btn" onclick="changeQty('${p.variantId}',1)">+</button>
+      </div>
+      <div class="cart-item-total">NT$${(Number(p.price||0)*qty).toLocaleString()}</div>
+      <button class="remove-btn" onclick="removeItem('${p.variantId}')">×</button>
+    </div>`).join('');
+  if (selectedPayment) document.getElementById('checkoutBtn').disabled = false;
+}
+
+// ─── TOTAL ────────────────────────────────────────────────
+function calcTotal() {
+  const items = Object.values(cart);
+  const subtotal = items.reduce((s, { product: p, qty }) => s + Number(p.price || 0) * qty, 0);
+  const discType = document.getElementById('discType').value;
+  const discVal  = parseFloat(document.getElementById('discValue').value) || 0;
+
+  let discAmt = 0;
+  if (discType === 'amount') discAmt = Math.min(discVal, subtotal);
+  else if (discType === 'percent' && discVal > 0 && discVal <= 10) discAmt = subtotal - Math.round(subtotal * discVal / 10);
+
+  const total = subtotal - discAmt;
+
+  document.getElementById('subtotalDisplay').textContent = `NT$${subtotal.toLocaleString()}`;
+  document.getElementById('totalDisplay').textContent = `NT$${total.toLocaleString()}`;
+
+  const discRow = document.getElementById('discountDisplay');
+  if (discAmt > 0) {
+    discRow.style.display = 'flex';
+    document.getElementById('discountAmtDisplay').textContent = `-NT$${Math.round(discAmt).toLocaleString()}`;
+  } else {
+    discRow.style.display = 'none';
+  }
+
+  // Enable checkout btn if cart not empty and payment selected
+  const hasItems = items.length > 0;
+  document.getElementById('checkoutBtn').disabled = !(hasItems && selectedPayment);
+}
+
+// ─── PAYMENT ──────────────────────────────────────────────
+function selectPay(el, method) {
+  selectedPayment = method;
+  document.querySelectorAll('.pay-method').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  calcTotal();
+}
+
+// ─── CUSTOMER LOOKUP ──────────────────────────────────────
+async function lookupCustomer() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  if (!phone) return;
+  if (!config.domain || !config.token) { showToast('請先設定 API', 'error'); return; }
+  try {
+    const resp = await esGet(`/admin/customers.json?query=phone:${encodeURIComponent(phone)}`);
+    const data = await resp.json();
+    const customers = data.customers || [];
+    const info = document.getElementById('customerInfo');
+    if (customers.length > 0) {
+      currentCustomer = customers[0];
+      info.innerHTML = `<div class="customer-name">${escHtml(currentCustomer.first_name || '')} ${escHtml(currentCustomer.last_name || '')}</div>
+        <div class="customer-sub">累計訂單 ${currentCustomer.orders_count || 0} 筆・${phone}</div>`;
+      info.classList.add('show');
+      showToast('找到會員資料', 'success');
+    } else {
+      currentCustomer = null;
+      info.innerHTML = `<div class="customer-name">未找到會員 <span class="customer-new-badge">新顧客</span></div>
+        <div class="customer-sub">${phone} — 是否建立新顧客？</div>`;
+      info.classList.add('show');
+      document.getElementById('nc_phone').value = phone;
+      document.getElementById('nc_name').value = '';
+      document.getElementById('nc_email').value = '';
+      setTimeout(() => document.getElementById('newCustModal').classList.add('show'), 300);
+    }
+  } catch(e) {
+    showToast('查詢失敗', 'error');
+  }
+}
+
+function closeNewCust() {
+  document.getElementById('newCustModal').classList.remove('show');
+  const phone = document.getElementById('phoneInput').value.trim();
+  const info = document.getElementById('customerInfo');
+  info.innerHTML = `<div class="customer-name">散客 <span class="customer-new-badge">未登錄</span></div>
+    <div class="customer-sub">${phone}</div>`;
+  info.classList.add('show');
+}
+
+async function createCustomer() {
+  const name  = document.getElementById('nc_name').value.trim();
+  const phone = document.getElementById('nc_phone').value.trim();
+  const email = document.getElementById('nc_email').value.trim();
+  if (!name) { showToast('請輸入姓名', 'error'); return; }
+  try {
+    const resp = await esPost('/admin/customers.json', { customer: { first_name: name, phone, email: email || undefined, accepts_marketing: false } });
+    if (!resp.ok) throw new Error();
+    const data = await resp.json();
+    currentCustomer = data.customer;
+    const info = document.getElementById('customerInfo');
+    info.innerHTML = `<div class="customer-name">${escHtml(name)} <span class="customer-new-badge">已建立</span></div>
+      <div class="customer-sub">${phone} — 剛加入會員</div>`;
+    info.classList.add('show');
+    document.getElementById('newCustModal').classList.remove('show');
+    showToast('會員建立成功', 'success');
+  } catch(e) {
+    showToast('建立失敗', 'error');
+  }
+}
+
+// ─── CHECKOUT ─────────────────────────────────────────────
+async function startCheckout() {
+  const btn = document.getElementById('checkoutBtn');
+  const items = Object.values(cart);
+  if (!items.length || !selectedPayment) return;
+
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.textContent = '處理中...';
+
+  const subtotal = items.reduce((s, { product: p, qty }) => s + Number(p.price || 0) * qty, 0);
+  const discType = document.getElementById('discType').value;
+  const discVal  = parseFloat(document.getElementById('discValue').value) || 0;
+  let discAmt = 0;
+  if (discType === 'amount') discAmt = Math.min(discVal, subtotal);
+  else if (discType === 'percent' && discVal > 0 && discVal <= 10) discAmt = subtotal - Math.round(subtotal * discVal / 10);
+  const total = subtotal - discAmt;
+
+  try {
+    // 1) Create order in EasyStore
+    const lineItems = items.map(({ product: p, qty }) => ({
+      variant_id: p.variantId,
+      quantity: qty,
+      price: p.price
+    }));
+
+    const orderBody = {
+      order: {
+        line_items: lineItems,
+        financial_status: 'paid',
+        source_name: 'POS',
+        note: `POS結帳 付款方式:${selectedPayment}`,
+        ...(currentCustomer ? { customer: { id: currentCustomer.id } } : {})
+      }
+    };
+
+    const esResp = await esPost('/admin/orders.json', orderBody);
+    if (!esResp.ok) {
+      const errData = await esResp.json();
+      throw new Error('EasyStore 建單失敗：' + JSON.stringify(errData));
+    }
+    const esData = await esResp.json();
+    const orderId = esData.order?.name || esData.order?.order_number || '未知';
+
+    // 2) Write to Google Sheet (Orders + 出庫NEW1)
+    const sheetPayload = {
+      action: 'checkout',
+      orderId,
+      items: items.map(({ product: p, qty }) => ({
+        barcode: p.barcode || '',
+        variantId: p.variantId,
+        brand: p.brand || '',
+        name: p.name || '',
+        price: p.price,
+        qty,
+        total: Number(p.price) * qty
+      })),
+      subtotal,
+      discType,
+      discAmt: Math.round(discAmt),
+      total,
+      payment: selectedPayment,
+      customerName: currentCustomer ? `${currentCustomer.first_name || ''} ${currentCustomer.last_name || ''}`.trim() : '散客',
+      timestamp: new Date().toLocaleString('zh-TW')
+    };
+
+    const shResp = await sheetPost(sheetPayload);
+    if (!shResp.ok) throw new Error('Google Sheet 寫入失敗');
+
+    // 3) Show receipt & reset
+    showReceipt(orderId, items, total, discAmt, selectedPayment);
+    nextOrderNum = orderId;
+    fetchNextOrderNumber();
+
+  } catch(e) {
+    showToast('結帳失敗：' + e.message, 'error');
+    console.error(e);
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.textContent = '結帳並同步';
+  }
+}
+
+// ─── RECEIPT ──────────────────────────────────────────────
+function showReceipt(orderId, items, total, discAmt, payment) {
+  const now = new Date().toLocaleString('zh-TW');
+  const rows = items.map(({ product: p, qty }) =>
+    `<div class="receipt-row"><span>${p.name} ×${qty}</span><span>NT$${(Number(p.price)*qty).toLocaleString()}</span></div>`
+  ).join('');
+  document.getElementById('receiptContent').innerHTML = `
+    <div class="receipt-title">訂單 ${orderId}</div>
+    <hr class="receipt-divider">
+    ${rows}
+    <hr class="receipt-divider">
+    ${discAmt > 0 ? `<div class="receipt-row"><span>折扣</span><span>-NT$${Math.round(discAmt).toLocaleString()}</span></div>` : ''}
+    <div class="receipt-row receipt-total"><span>合計</span><span>NT$${total.toLocaleString()}</span></div>
+    <div class="receipt-row" style="margin-top:6px;font-size:11px;color:#888;"><span>付款</span><span>${payment}</span></div>
+    <div class="receipt-row" style="font-size:11px;color:#888;"><span>時間</span><span>${now}</span></div>`;
+  document.getElementById('receiptModal').classList.add('show');
+}
+
+function closeReceipt() {
+  document.getElementById('receiptModal').classList.remove('show');
+  cart = {};
+  currentCustomer = null;
+  selectedPayment = '';
+  document.getElementById('customerInfo').classList.remove('show');
+  document.getElementById('phoneInput').value = '';
+  document.getElementById('discType').value = 'none';
+  document.getElementById('discValue').value = '';
+  document.querySelectorAll('.pay-method').forEach(b => b.classList.remove('selected'));
+  renderCart();
+  calcTotal();
+  renderProducts(); // refresh stock display
+  loadProductsFromSheet(); // reload inventory from sheet
+}
+
+// ─── UTILS ────────────────────────────────────────────────
+function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── KEYBOARD: barcode scanner support ────────────────────
+let barcodeBuffer = '';
+let barcodeTimer = null;
+document.addEventListener('keydown', e => {
+  // If an input is focused, don't intercept
+  if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') return;
+  if (e.key === 'Enter') {
+    if (barcodeBuffer.length > 3) {
+      const q = barcodeBuffer;
+      barcodeBuffer = '';
+      const found = products.find(p => String(p.barcode) === q || String(p.variantId) === q);
+      if (found && found.stock > 0) { addToCart(String(found.variantId)); showToast(`已加入：${found.name}`, 'success'); }
+      else if (found) showToast('該商品庫存不足', 'error');
+      else showToast('找不到條碼：' + q, 'error');
+    }
+    barcodeBuffer = '';
+    return;
+  }
+  if (e.key.length === 1) {
+    barcodeBuffer += e.key;
+    clearTimeout(barcodeTimer);
+    barcodeTimer = setTimeout(() => { barcodeBuffer = ''; }, 200);
+  }
+});
+
+// ─── START ────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
