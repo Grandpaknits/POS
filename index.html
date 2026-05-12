@@ -179,8 +179,8 @@
         <span class="search-ico">🔍</span>
         <input class="search-input" id="searchInput" placeholder="搜尋商品名稱、條碼..." oninput="filterProducts(this.value)" />
       </div>
-      <button class="sync-btn" id="syncBtn" onclick="syncProducts()">
-        <span class="spin" id="syncSpin">↻</span> 同步商品
+      <button class="sync-btn" id="syncBtn" onclick="reloadInventory()">
+        <span class="spin" id="syncSpin">↻</span> 重新載入
       </button>
     </div>
     <div class="cat-tabs" id="catTabs"></div>
@@ -388,19 +388,19 @@ async function loadNextOrder() {
   } catch(e) {}
 }
 
-// ─── SYNC FROM EASYSTORE ──────────────────────────────────
-async function syncProducts() {
-  if (!cfg.scriptUrl || !cfg.token) { toast('請先完成設定', 'err'); return; }
+// ─── RELOAD INVENTORY FROM SHEET (safe, read-only) ───────
+async function reloadInventory() {
   const spin = document.getElementById('syncSpin');
   const btn  = document.getElementById('syncBtn');
   spin.classList.add('go'); btn.disabled = true;
   try {
-    const d = await shGet({ action:'syncProducts', token: cfg.token, domain: cfg.domain });
-    if (d.error) throw new Error(d.error);
-    toast(`同步完成：更新 ${d.updated} 筆，新增 ${d.added} 筆`, 'ok');
     await loadInventory();
-  } catch(e) { toast('同步失敗：' + e.message, 'err'); }
-  finally { spin.classList.remove('go'); btn.disabled = false; }
+    toast('商品資料已從 Google Sheet 重新載入', 'ok');
+  } catch(e) {
+    toast('載入失敗：' + e.message, 'err');
+  } finally {
+    spin.classList.remove('go'); btn.disabled = false;
+  }
 }
 
 // ─── CATEGORIES ───────────────────────────────────────────
