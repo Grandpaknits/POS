@@ -191,7 +191,7 @@
     <div class="cust-section">
       <div class="sec-label">顧客</div>
       <div class="phone-row">
-        <input class="phone-input" id="phoneInput" type="tel" placeholder="輸入電話號碼查詢會員..." maxlength="15" onkeydown="if(event.key==='Enter')lookupCustomer()" />
+        <input class="phone-input" id="phoneInput" type="text" placeholder="電話（09...）或姓名搜尋..." maxlength="30" onkeydown="if(event.key==='Enter')lookupCustomer()" />
         <button class="phone-btn" onclick="lookupCustomer()">查詢</button>
       </div>
       <div class="cust-info" id="custInfo"></div>
@@ -522,24 +522,35 @@ function selPay(el, method) {
 
 // ─── CUSTOMER ─────────────────────────────────────────────
 async function lookupCustomer() {
-  const phone = document.getElementById('phoneInput').value.trim();
-  if (!phone) return;
+  const query = document.getElementById('phoneInput').value.trim();
+  if (!query) return;
   if (!cfg.scriptUrl || !cfg.token) { toast('請先完成設定', 'err'); return; }
   toast('查詢中...');
   try {
-    const d = await shGet({ action:'lookupCustomer', phone, token:cfg.token, domain:cfg.domain });
+    // 判斷是電話還是姓名
+    const isPhone = /^[0-9+\-\s]+$/.test(query);
+    const d = await shGet({
+      action: 'lookupCustomer',
+      query,
+      isPhone: isPhone ? '1' : '0',
+      token: cfg.token,
+      domain: cfg.domain
+    });
     const info = document.getElementById('custInfo');
     if (d.found) {
       currentCust = d.customer;
       info.innerHTML = `<div class="cust-name">${esc((d.customer.firstName||'')+(d.customer.lastName?' '+d.customer.lastName:''))}</div>
-        <div class="cust-sub">累計訂單 ${d.customer.ordersCount||0} 筆・${phone}</div>`;
-      info.classList.add('show'); toast('找到會員', 'ok');
+        <div class="cust-sub">累計訂單 ${d.customer.ordersCount||0} 筆・${d.customer.phone||query}</div>`;
+      info.classList.add('show');
+      toast('找到會員', 'ok');
     } else {
       currentCust = null;
-      info.innerHTML = `<div class="cust-name">未找到會員 <span class="new-badge">新顧客</span></div><div class="cust-sub">${phone}</div>`;
+      info.innerHTML = `<div class="cust-name">未找到會員 <span class="new-badge">新顧客</span></div>
+        <div class="cust-sub">是否建立新會員？</div>`;
       info.classList.add('show');
-      document.getElementById('ncPhone').value = phone;
-      document.getElementById('ncName').value  = '';
+      // 預填新顧客表單
+      document.getElementById('ncPhone').value = isPhone ? query : '';
+      document.getElementById('ncName').value  = isPhone ? '' : query;
       document.getElementById('ncEmail').value = '';
       setTimeout(() => document.getElementById('newCustModal').classList.add('show'), 200);
     }
