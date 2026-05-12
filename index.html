@@ -329,27 +329,30 @@ async function saveConfig() {
   if (!cfg.domain || !cfg.token || !cfg.scriptUrl) { toast('請填寫所有欄位', 'err'); return; }
   localStorage.setItem('pos_config_v2', JSON.stringify(cfg));
 
-  toast('測試連線中...');
-  // 測試 Apps Script ping
-  try {
-    const r = await fetch(cfg.scriptUrl + '?action=ping');
-    const d = await r.json();
-    if (!d.ok) throw new Error('Apps Script 回應異常');
-    setStatus('sh', true);
-  } catch(e) { setStatus('sh', false); toast('Apps Script 連線失敗，請確認 URL 並重新部署', 'err'); return; }
+  toast('測試 Apps Script 連線...');
 
-  // 測試 EasyStore（透過 Apps Script 代為查詢）
+  // 1) 測試 Apps Script ping（快速）
   try {
-    const r = await fetch(`${cfg.scriptUrl}?action=syncProducts&token=${encodeURIComponent(cfg.token)}&domain=${encodeURIComponent(cfg.domain)}`);
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 10000);
+    const r = await fetch(cfg.scriptUrl + '?action=ping', { signal: ctrl.signal });
+    clearTimeout(tid);
     const d = await r.json();
-    if (d.error) throw new Error(d.error);
-    setStatus('es', true);
-    toast('連線成功！', 'ok');
-    document.getElementById('cfgBanner').classList.add('hidden');
-    closeConfig();
-    loadInventory();
-    loadNextOrder();
-  } catch(e) { setStatus('es', false); toast('EasyStore 連線失敗：請確認網域和 API 存取權杖', 'err'); }
+    if (!d.ok) throw new Error('ping 失敗');
+    setStatus('sh', true);
+  } catch(e) {
+    setStatus('sh', false);
+    toast('Apps Script 連線失敗，請確認 URL 並重新部署', 'err');
+    return;
+  }
+
+  // 2) 儲存設定，直接進入系統（EasyStore 連線在同步商品時再驗證）
+  setStatus('es', true);
+  toast('設定已儲存！請按「同步商品」載入商品資料', 'ok');
+  document.getElementById('cfgBanner').classList.add('hidden');
+  closeConfig();
+  loadInventory();
+  loadNextOrder();
 }
 
 function setStatus(which, ok) {
