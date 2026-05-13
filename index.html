@@ -76,18 +76,19 @@
   .product-area::-webkit-scrollbar { width: 4px; }
   .product-area::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 2px; }
 
-  .prod-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; transition: all 0.12s; }
+  .prod-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; transition: all 0.12s; display: flex; flex-direction: column; }
   .prod-card:hover:not(.out) { border-color: var(--accent-mid); box-shadow: 0 2px 8px rgba(107,79,46,0.12); }
   .prod-card:active:not(.out) { transform: scale(0.98); }
   .prod-card.out { opacity: 0.4; cursor: not-allowed; }
 
-  .prod-img { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--bg); display: block; }
-  .prod-img-placeholder { width: 100%; aspect-ratio: 1; background: var(--accent-light); display: flex; align-items: center; justify-content: center; color: var(--text-hint); font-size: 24px; }
-  .prod-body { padding: 8px 9px 9px; }
-  .prod-name { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 2px; line-height: 1.4; }
-  .prod-brand { font-size: 10px; color: var(--text-hint); margin-bottom: 5px; letter-spacing: 0.03em; }
-  .prod-price { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent); }
-  .prod-stock { font-size: 10px; margin-top: 3px; }
+  .prod-img-wrap { width: 100%; aspect-ratio: 1; overflow: hidden; background: var(--accent-light); flex-shrink: 0; position: relative; }
+  .prod-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .prod-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-hint); font-size: 28px; background: var(--accent-light); }
+  .prod-body { padding: 8px 9px 10px; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .prod-name { font-size: 11.5px; font-weight: 500; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .prod-brand { font-size: 10px; color: var(--text-hint); letter-spacing: 0.03em; }
+  .prod-price { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent); margin-top: 2px; }
+  .prod-stock { font-size: 10px; }
   .s-ok { color: var(--green); }
   .s-low { color: var(--warning); }
   .s-out { color: var(--danger); }
@@ -457,9 +458,8 @@ function renderProducts() {
     const s = parseInt(p.stock)||0;
     const sl = s===0 ? '<span class="s-out">已售完</span>' : s<=3 ? `<span class="s-low">庫存 ${s}</span>` : `<span class="s-ok">庫存 ${s}</span>`;
     const imgHtml = p.imageUrl
-      ? `<img class="prod-img" src="${esc(p.imageUrl)}" alt="${esc(p.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-      + `<div class="prod-img-placeholder" style="display:none;">🧶</div>`
-      : `<div class="prod-img-placeholder">🧶</div>`;
+      ? `<div class="prod-img-wrap"><img class="prod-img" src="${esc(p.imageUrl)}" alt="${esc(p.name)}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'prod-img-placeholder\\'>🧶</div>'"></div>`
+      : `<div class="prod-img-wrap"><div class="prod-img-placeholder">🧶</div></div>`;
     return `<div class="prod-card ${s===0?'out':''}" onclick="${s>0?`addCart('${p.variantId}')`:''}" >
       ${imgHtml}
       <div class="prod-body">
