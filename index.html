@@ -76,19 +76,19 @@
   .product-area::-webkit-scrollbar { width: 4px; }
   .product-area::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 2px; }
 
-  .prod-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; transition: all 0.12s; display: flex; flex-direction: column; }
+  .prod-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; transition: all 0.12s; display: flex; flex-direction: column; height: 220px; }
   .prod-card:hover:not(.out) { border-color: var(--accent-mid); box-shadow: 0 2px 8px rgba(107,79,46,0.12); }
   .prod-card:active:not(.out) { transform: scale(0.98); }
   .prod-card.out { opacity: 0.4; cursor: not-allowed; }
 
-  .prod-img-wrap { width: 100%; aspect-ratio: 1; overflow: hidden; background: var(--accent-light); flex-shrink: 0; position: relative; }
+  .prod-img-wrap { width: 100%; height: 120px; flex-shrink: 0; overflow: hidden; background: var(--accent-light); position: relative; }
   .prod-img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .prod-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-hint); font-size: 28px; background: var(--accent-light); }
-  .prod-body { padding: 8px 9px 10px; flex: 1; display: flex; flex-direction: column; gap: 2px; }
-  .prod-name { font-size: 11.5px; font-weight: 500; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .prod-brand { font-size: 10px; color: var(--text-hint); letter-spacing: 0.03em; }
-  .prod-price { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent); margin-top: 2px; }
-  .prod-stock { font-size: 10px; }
+  .prod-body { padding: 7px 9px 8px; flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .prod-name { font-size: 11px; font-weight: 500; color: var(--text); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 2px; flex-shrink: 0; }
+  .prod-brand { font-size: 10px; color: var(--text-hint); letter-spacing: 0.03em; flex-shrink: 0; }
+  .prod-price { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--accent); margin-top: auto; padding-top: 3px; flex-shrink: 0; }
+  .prod-stock { font-size: 10px; flex-shrink: 0; }
   .s-ok { color: var(--green); }
   .s-low { color: var(--warning); }
   .s-out { color: var(--danger); }
