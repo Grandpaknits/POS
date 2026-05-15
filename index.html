@@ -612,7 +612,7 @@ async function lookupCustomer() {
   toast('查詢中...');
   try {
     const isPhone = /^[0-9+\-\s]+$/.test(query);
-    const d = await shGet({ action:'lookupCustomer', query, isPhone:isPhone?'1':'0' });
+    const d = await shGet({ action:'lookupCustomer', query, isPhone:isPhone?'1':'0', token:cfg.token, domain:cfg.domain });
     const info = document.getElementById('custInfo');
     if (d.error && d.error.includes('尚未同步')) { toast('請先在設定中同步顧客資料','err'); return; }
     if (d.found) {
